@@ -1,0 +1,462 @@
+apakah ini sudah benar atau masih ada yang salah?
+
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Love You Sayang</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        canvas {
+            display: block;
+            background: #000;
+        }
+
+        .text-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(40px, 12vw, 150px);
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            letter-spacing: clamp(4px, 2vw, 10px);
+            text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            z-index: 10;
+        }
+
+        .heart-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            z-index: 10;
+        }
+
+        .heart-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 42px;
+            font-weight: bold;
+            color: #fff;
+            text-align: center;
+            line-height: 1.4;
+            text-shadow: 0 0 25px rgba(255, 255, 255, 0.9);
+            opacity: 0;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .audio-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: #fff;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <audio id="bgMusic" src="audio/love.mp3" loop></audio>
+
+    <div class="text-overlay" id="textOverlay"></div>
+    <div class="heart-text" id="heartText">
+        I Love You<br>Cute Girl ❤️
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const textOverlay = document.getElementById('textOverlay');
+
+        const heartImages = [];
+        const heartImageSources = [
+            'images/heart1.jpeg',
+            'images/heart2.jpeg',
+            'images/heart3.jpeg',
+            'images/heart4.jpeg',
+            'images/heart5.jpeg'
+        ];
+
+        let heartImagesLoaded = 0;
+
+        heartImageSources.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            img.onload = () => heartImagesLoaded++;
+            heartImages.push(img);
+        });
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        /* ================= MATRIX RAIN ================= */
+        class MatrixRain {
+            constructor(color) {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.speed = Math.random() * 8 + 4;
+                this.color = color;
+                this.characters = '01アイウエオカキクケコサシスセソタチツテト'.split('');
+                this.char = this.characters[Math.floor(Math.random() * this.characters.length)];
+                this.fontSize = 16;
+            }
+
+            update() {
+                this.y += this.speed;
+                if (this.y > canvas.height) {
+                    this.y = -20;
+                    this.x = Math.random() * canvas.width;
+                }
+                if (Math.random() > 0.95) {
+                    this.char = this.characters[Math.floor(Math.random() * this.characters.length)];
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.font = `${this.fontSize}px Courier New`;
+                ctx.fillText(this.char, this.x, this.y);
+            }
+        }
+
+        /* ================= HEART PARTICLE ================= */
+        let hearts = [];
+
+        class HeartParticle {
+            constructor(startX, startY, targetX, targetY) {
+                this.x = startX;
+                this.y = startY;
+                this.tx = targetX;
+                this.ty = targetY;
+                this.size = Math.random() * 2 + 1;
+            }
+
+            update(formed) {
+                if (formed) return;
+
+                this.x += (this.tx - this.x) * 0.08;
+                this.y += (this.ty - this.y) * 0.08;
+
+                if (Math.abs(this.tx - this.x) < 0.5 &&
+                    Math.abs(this.ty - this.y) < 0.5) {
+                    this.x = this.tx;
+                    this.y = this.ty;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = 'rgba(255,105,180,1)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const INNER_HEART_FACTOR = 0.78;
+
+        class Heart {
+            constructor(cx, cy, scale, bgImage = null) {
+                this.cx = cx;
+                this.cy = cy;
+                this.scale = scale;
+                this.bgImage = bgImage;
+                this.particles = [];
+                this.formed = false;
+                this.imageDrawn = false;
+                this.create();
+            }
+
+            create() {
+                const points = getHeartOutlinePoints(6, 0.05);
+
+                points.forEach(p => {
+                    this.particles.push(
+                        new HeartParticle(
+                            Math.random() * canvas.width,
+                            Math.random() * canvas.height,
+                            this.cx + p.x * this.scale,
+                            this.cy - p.y * this.scale
+                        )
+                    );
+                });
+
+                // KUNCI SETELAH TERBENTUK
+                setTimeout(() => {
+                    this.formed = true;
+                }, 2500);
+            }
+
+            update() {
+                this.particles.forEach(p => {
+                    p.update(this.formed);
+                    if (this.formed) {
+                        p.x = p.tx;
+                        p.y = p.ty;
+                    }
+                });
+            }
+
+            draw() {
+
+                // FOTO DIGAMBAR SEKALI SAJA
+                if (
+                    this.bgImage &&
+                    heartImagesLoaded === heartImages.length &&
+                    this.formed &&
+                    !this.imageDrawn
+                ) {
+
+                    ctx.save();
+
+                    drawHeartPath(
+                        this.cx,
+                        this.cy,
+                        this.scale * INNER_HEART_FACTOR
+                    );
+
+                    ctx.clip();
+
+                    const boxSize = this.scale * 22;
+                    const imgRatio = this.bgImage.width / this.bgImage.height;
+
+                    let drawW, drawH;
+                    if (imgRatio > 1) {
+                        drawH = boxSize;
+                        drawW = boxSize * imgRatio;
+                    } else {
+                        drawW = boxSize;
+                        drawH = boxSize / imgRatio;
+                    }
+
+                    ctx.drawImage(
+                        this.bgImage,
+                        this.cx - drawW / 2,
+                        this.cy - drawH / 2,
+                        drawW,
+                        drawH
+                    );
+
+                    ctx.restore();
+
+                }
+
+                // PARTIKEL LOVE (BOLEH DIGAMBAR TERUS)
+                this.particles.forEach(p => p.draw());
+            }
+
+        }
+
+        /* ================= HEART SHAPE ================= */
+        function getHeartOutlinePoints(layers = 4, step = 0.05) {
+            const points = [];
+            for (let t = 0; t < Math.PI * 2; t += 0.02) {
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y =
+                    13 * Math.cos(t) -
+                    5 * Math.cos(2 * t) -
+                    2 * Math.cos(3 * t) -
+                    Math.cos(4 * t);
+
+                for (let i = 0; i < layers; i++) {
+                    const factor = 1 - i * step;
+                    points.push({ x: x * factor, y: y * factor });
+                }
+            }
+            return points;
+        }
+
+        function drawHeartPath(cx, cy, scale) {
+            ctx.beginPath();
+            let first = true;
+
+            for (let t = 0; t < Math.PI * 2; t += 0.02) {
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y =
+                    13 * Math.cos(t) -
+                    5 * Math.cos(2 * t) -
+                    2 * Math.cos(3 * t) -
+                    Math.cos(4 * t);
+
+                const px = cx + x * scale;
+                const py = cy - y * scale;
+
+                if (first) {
+                    ctx.moveTo(px, py);
+                    first = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+
+            ctx.closePath();
+        }
+
+        /* ================= TEXT ================= */
+        function showText(text) {
+            textOverlay.textContent = text;
+            textOverlay.style.opacity = '1';
+        }
+        function hideText() {
+            textOverlay.style.opacity = '0';
+        }
+
+        /* ================= SHOW HEART ================= */
+        function showHeart() {
+            hearts = [];
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // LOVE UTAMA
+            const baseScale = Math.min(canvas.width, canvas.height) / 30;
+            hearts.push(new Heart(cx, cy, baseScale));
+
+            document.getElementById('heartText').style.opacity = '1';
+
+            // LOVE KECIL (SETELAH LOVE UTAMA TERBENTUK)
+            setTimeout(() => {
+
+                const basePositions = [
+                    { x: -0.25, y: -0.25 },
+                    { x: 420, y: -280 },
+                    { x: -500, y: 40 },
+                    { x: 520, y: 80 },
+                    { x: -260, y: 420 },
+                    { x: 300, y: 460 }
+                ];
+
+                basePositions.forEach(pos => {
+                    const randomX = pos.x + (Math.random() * 140 - 70);
+                    const randomY = pos.y + (Math.random() * 140 - 70);
+                    const randomScale = 7 + Math.random() * 6;
+
+                    const randomImage =
+                        heartImages[Math.floor(Math.random() * heartImages.length)];
+
+                    hearts.push(
+                        new Heart(
+                            cx + randomX,
+                            cy + randomY,
+                            randomScale,
+                            randomImage
+                        )
+                    );
+                });
+
+            }, 2700);
+
+        }
+
+        /* ================= RAIN ================= */
+        let raindrops = [];
+        function initRain(color, count) {
+            raindrops = [];
+            for (let i = 0; i < count; i++) {
+                raindrops.push(new MatrixRain(color));
+            }
+        }
+
+        /* ================= TIMELINE ================= */
+        const timeline = [
+            { time: 0, action: () => initRain('rgba(255,255,255,1)', 150) },
+            { time: 3000, action: () => showText('You') },
+            { time: 5500, action: hideText },
+            { time: 6000, action: () => showText('Are') },
+            { time: 8500, action: hideText },
+            { time: 9000, action: () => showText('My') },
+            { time: 11500, action: hideText },
+            { time: 12000, action: () => showText('Love') },
+            { time: 14500, action: hideText },
+            { time: 15000, action: () => initRain('rgba(255,105,180,1)', 200) },
+            { time: 17000, action: showHeart }
+        ];
+
+        let timelineIndex = 0;
+        const startTime = Date.now();
+
+        /* ================= ANIMATE ================= */
+        function animate() {
+            ctx.fillStyle = 'rgba(0,0,0,0.15)';
+
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            raindrops.forEach(r => {
+                r.update();
+                r.draw();
+            });
+
+            hearts.forEach(h => {
+                h.update();
+                h.draw();
+            });
+
+            const elapsed = Date.now() - startTime;
+            if (timelineIndex < timeline.length && elapsed >= timeline[timelineIndex].time) {
+                timeline[timelineIndex].action();
+                timelineIndex++;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        /* ================= START ================= */
+        window.addEventListener('load', animate);
+    </script>
+
+    <script>
+        const bgMusic = document.getElementById('bgMusic');
+
+        function startMusic() {
+            bgMusic.volume = 0;
+            bgMusic.play().catch(() => { });
+
+            let v = 0;
+            const fade = setInterval(() => {
+                v += 0.02;
+                bgMusic.volume = Math.min(v, 0.6);
+                if (v >= 0.6) clearInterval(fade);
+            }, 100);
+
+            document.removeEventListener('click', startMusic);
+        }
+
+        // autoplay aman untuk HP
+        document.addEventListener('click', startMusic);
+    </script>
+
+</body>
+
+</html>
