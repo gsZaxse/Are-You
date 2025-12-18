@@ -17,12 +17,17 @@ apakah ini sudah benar atau masih ada yang salah?
         body {
             background: #000;
             overflow: hidden;
-            font-family: 'Courier New', monospace;
         }
 
         canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             display: block;
             background: #000;
+            z-index: 1;
         }
 
         .text-overlay {
@@ -51,22 +56,6 @@ apakah ini sudah benar atau masih ada yang salah?
             z-index: 10;
         }
 
-        .heart-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: clamp(18px, 6vw, 42px);
-            font-weight: bold;
-            color: #fff;
-            text-align: center;
-            line-height: 1.4;
-            text-shadow: 0 0 25px rgba(255, 255, 255, 0.9);
-            opacity: 0;
-            z-index: 20;
-            pointer-events: none;
-        }
-
         .audio-control {
             position: absolute;
             bottom: 20px;
@@ -79,6 +68,76 @@ apakah ini sudah benar atau masih ada yang salah?
             font-size: 14px;
             backdrop-filter: blur(10px);
         }
+
+        .heart-text {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(28px, 6vw, 48px);
+            text-align: center;
+            color: white;
+            opacity: 0;
+            transition: opacity 1s ease;
+            z-index: 30;
+            pointer-events: none;
+        }
+
+        .floating-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            max-width: 220px;
+            font-size: clamp(16px, 3.5vw, 26px);
+            color: #ffb6c1;
+            opacity: 0;
+            transition:
+                opacity 0.8s ease,
+                transform 1.5s ease;
+            animation: floatY 3s ease-in-out infinite alternate;
+            z-index: 20;
+        }
+
+        /* POSISI AWAL */
+        .left,
+        .right {
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        /* POSISI AKHIR (MENYEBAR) */
+        .show[data-i="1"] {
+            transform: translate(-280px, -120px);
+        }
+
+        .show[data-i="2"] {
+            transform: translate(-320px, 0);
+        }
+
+        .show[data-i="3"] {
+            transform: translate(-260px, 120px);
+        }
+
+        .show[data-i="4"] {
+            transform: translate(280px, -120px);
+        }
+
+        .show[data-i="5"] {
+            transform: translate(320px, 0);
+        }
+
+        .show[data-i="6"] {
+            transform: translate(260px, 120px);
+        }
+
+        @keyframes floatY {
+            from {
+                margin-top: 0;
+            }
+
+            to {
+                margin-top: -18px;
+            }
+        }
     </style>
 </head>
 
@@ -87,8 +146,19 @@ apakah ini sudah benar atau masih ada yang salah?
     <audio id="bgMusic" src="audio/love.mp3" loop></audio>
 
     <div class="text-overlay" id="textOverlay"></div>
-    <div class="heart-text" id="heartText">
+    <div class="heart-text">
         I Love You<br>Cute Girl ❤️
+    </div>
+
+    <!-- TEKS KIRI -->
+    <div class="floating-text left" data-i="1">Jangan lupa makan cantik 🍚</div>
+    <div class="floating-text left" data-i="2">Minum air putih ya 💧</div>
+    <div class="floating-text left" data-i="3">Jangan begadang terus 😴</div>
+
+    <div class="floating-text right" data-i="4">Aku selalu doain kamu 🤍</div>
+    <div class="floating-text right" data-i="5">Semangat jalani harimu ✨</div>
+    <div class="floating-text right" data-i="6">Aku bangga sama kamu 💖</div>
+
     </div>
 
     <script>
@@ -347,7 +417,16 @@ apakah ini sudah benar atau masih ada yang salah?
 
             hearts.push(new Heart(cx, cy, baseScale));
 
-            document.getElementById('heartText').style.opacity = '1';
+            document.querySelector('.heart-text').style.opacity = '1';
+
+            setTimeout(() => {
+                document.querySelectorAll('.floating-text').forEach((text, i) => {
+                    setTimeout(() => {
+                        text.classList.add('show');
+                        text.style.opacity = '1';
+                    }, i * 400);
+                });
+            }, 1800);
 
             // LOVE KECIL (SETELAH LOVE UTAMA TERBENTUK)
             setTimeout(() => {
