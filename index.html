@@ -70,32 +70,30 @@ apakah ini sudah benar atau masih ada yang salah?
         }
 
         .heart-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -60%);
-            font-size: clamp(26px, 5vw, 42px);
+            position: fixed;
+            top: 50vh;
+            left: 50vw;
+            transform: translate(-50%, -50%);
+            font-size: clamp(22px, 5vw, 40px);
             text-align: center;
             color: white;
             opacity: 0;
             transition: opacity 1s ease;
             z-index: 30;
             pointer-events: none;
-            text-shadow: 0 0 15px rgba(255, 105, 180, 0.9);
         }
 
         .floating-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            max-width: 220px;
-            font-size: clamp(16px, 3.5vw, 26px);
+            position: fixed;
+            top: 50vh;
+            left: 50vw;
+            transform:
+                translate(-50%, -50%) translate(var(--x, 0), var(--y, 0)) scale(0.85);
+            font-size: clamp(14px, 3.8vw, 22px);
             color: #ffb6c1;
             opacity: 0;
-            transition:
-                opacity 0.8s ease,
-                transform 1.5s ease;
-            animation: floatY 3s ease-in-out infinite alternate;
+            transition: opacity 0.8s ease, transform 1.5s ease;
+            animation: float 3s ease-in-out infinite alternate;
             z-index: 20;
         }
 
@@ -105,29 +103,35 @@ apakah ini sudah benar atau masih ada yang salah?
             transform: translate(-50%, -50%) scale(0.8);
         }
 
-        /* POSISI AKHIR (MENYEBAR) */
+        /* POSISI AKHIR RESPONSIVE (HP & DESKTOP AMAN) */
         .show[data-i="1"] {
-            transform: translate(-280px, -120px);
+            --x: -28vw;
+            --y: -14vh;
         }
 
         .show[data-i="2"] {
-            transform: translate(-320px, 0);
+            --x: -32vw;
+            --y: 0vh;
         }
 
         .show[data-i="3"] {
-            transform: translate(-260px, 120px);
+            --x: -26vw;
+            --y: 14vh;
         }
 
         .show[data-i="4"] {
-            transform: translate(280px, -120px);
+            --x: 28vw;
+            --y: -14vh;
         }
 
         .show[data-i="5"] {
-            transform: translate(320px, 0);
+            --x: 32vw;
+            --y: 0vh;
         }
 
         .show[data-i="6"] {
-            transform: translate(260px, 120px);
+            --x: 26vw;
+            --y: 14vh;
         }
 
         @keyframes floatY {
@@ -432,7 +436,7 @@ apakah ini sudah benar atau masih ada yang salah?
 
             hearts.push(new Heart(cx, cy, baseScale));
 
-            // ✅ FIX TEKS TENGAH
+            // FIX TEKS TENGAH
             const heartText = document.querySelector('.heart-text');
             heartText.style.opacity = '1';
             heartText.classList.add('show');
