@@ -56,7 +56,7 @@ apakah ini sudah benar atau masih ada yang salah?
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 42px;
+            font-size: clamp(18px, 6vw, 42px);
             font-weight: bold;
             color: #fff;
             text-align: center;
@@ -341,7 +341,10 @@ apakah ini sudah benar atau masih ada yang salah?
             const cy = canvas.height / 2;
 
             // LOVE UTAMA
-            const baseScale = Math.min(canvas.width, canvas.height) / 30;
+            const baseScale =
+                Math.min(canvas.width, canvas.height) /
+                (window.innerWidth < 768 ? 36 : 30);
+
             hearts.push(new Heart(cx, cy, baseScale));
 
             document.getElementById('heartText').style.opacity = '1';
@@ -350,26 +353,29 @@ apakah ini sudah benar atau masih ada yang salah?
             setTimeout(() => {
 
                 const basePositions = [
-                    { x: -0.25, y: -0.25 },
-                    { x: 420, y: -280 },
-                    { x: -500, y: 40 },
-                    { x: 520, y: 80 },
-                    { x: -260, y: 420 },
-                    { x: 300, y: 460 }
+                    { x: -0.3, y: -0.3 },
+                    { x: 0.3, y: -0.3 },
+                    { x: -0.4, y: 0 },
+                    { x: 0.4, y: 0 },
+                    { x: -0.2, y: 0.35 },
+                    { x: 0.2, y: 0.35 }
                 ];
 
                 basePositions.forEach(pos => {
-                    const randomX = pos.x + (Math.random() * 140 - 70);
-                    const randomY = pos.y + (Math.random() * 140 - 70);
-                    const randomScale = 7 + Math.random() * 6;
+                    const offsetX = pos.x * canvas.width;
+                    const offsetY = pos.y * canvas.height;
+
+                    const randomScale =
+                        Math.min(canvas.width, canvas.height) / 70 +
+                        Math.random() * 6;
 
                     const randomImage =
                         heartImages[Math.floor(Math.random() * heartImages.length)];
 
                     hearts.push(
                         new Heart(
-                            cx + randomX,
-                            cy + randomY,
+                            cx + offsetX,
+                            cy + offsetY,
                             randomScale,
                             randomImage
                         )
